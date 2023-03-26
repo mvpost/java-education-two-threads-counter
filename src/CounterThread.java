@@ -1,29 +1,24 @@
-class CounterThread extends Thread {
-    private static int counter;
-    private static String winner;
-
-    public CounterThread(String name) {
-        super(name);
-        counter = 0;
-    }
-
-    public static int getCounter() {
-        return counter;
-    }
-
-    @Override
+class CounterThread implements Runnable {
+    private static final Object lock = new Object();
     public void run() {
-         while (counter < 100) {
-            synchronized (CounterThread.class) {
-                counter++;
-                if (counter == 100) {
-                    winner = getName();
-                    System.out.println(winner + ": I'm winner!");
+        while (CounterObject.getCounter() <= 100) {
+
+            Integer increment = CounterObject.increment();
+            synchronized(lock) {
+                if (increment == 100)
+                {
+                    try {
+                        lock.wait();
+                    }
+                    catch (InterruptedException e) {}
+                    System.out.println(Thread.currentThread().getName() + ": I'm winner!");
+                }
+                if (increment > 100)
+                {
+                    System.out.println(Thread.currentThread().getName() + ": I'm late....");
+                    lock.notify();
                 }
             }
-        }
-        if (getName() != winner) {
-            System.out.println(getName() + ": I'm late...");
         }
     }
 }
